@@ -5,6 +5,7 @@ import (
 	"github.com/shirokurostone/curl-to/lib"
 	"github.com/spf13/cobra"
 	"os"
+	"strings"
 )
 
 var rootCmd = &cobra.Command{
@@ -13,9 +14,20 @@ var rootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		lang := args[0]
 		url := args[1]
+
+		var hs [][2]string
+		for _, h := range headers {
+			parts := strings.SplitN(h, ":", 2)
+			if parts == nil || len(parts) != 2 {
+				return fmt.Errorf("invalid header value: %s", h)
+			}
+			hs = append(hs, [2]string{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
+		}
+
 		param := lib.CurlParam{
-			URL:    url,
-			Method: request,
+			URL:     url,
+			Method:  request,
+			Headers: hs,
 		}
 
 		var code string
@@ -36,9 +48,11 @@ var rootCmd = &cobra.Command{
 }
 
 var request string
+var headers []string
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&request, "request", "X", "GET", "")
+	rootCmd.PersistentFlags().StringArrayVarP(&headers, "header", "H", nil, "")
 }
 
 func Execute() {
