@@ -24,10 +24,20 @@ var rootCmd = &cobra.Command{
 			hs = append(hs, [2]string{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
 		}
 
+		var ds [][2]string
+		for _, d := range data {
+			parts := strings.SplitN(d, "=", 2)
+			if parts == nil || len(parts) != 2 {
+				return fmt.Errorf("invalid data value: %s", d)
+			}
+			ds = append(ds, [2]string{parts[0], parts[1]})
+		}
+
 		param := lib.CurlParam{
 			URL:     url,
 			Method:  request,
 			Headers: hs,
+			Data:    ds,
 		}
 
 		var code string
@@ -49,10 +59,12 @@ var rootCmd = &cobra.Command{
 
 var request string
 var headers []string
+var data []string
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&request, "request", "X", "GET", "")
 	rootCmd.PersistentFlags().StringArrayVarP(&headers, "header", "H", nil, "")
+	rootCmd.PersistentFlags().StringArrayVarP(&data, "data", "d", nil, "")
 }
 
 func Execute() {
