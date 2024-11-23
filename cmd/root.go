@@ -15,22 +15,22 @@ func buildCurlParam(
 	data []string,
 	form []string,
 ) (lib.CurlParam, error) {
-	var hs [][2]string
+	var hs []lib.KV
 	for _, h := range headers {
 		parts := strings.SplitN(h, ":", 2)
 		if parts == nil || len(parts) != 2 {
 			return lib.CurlParam{}, fmt.Errorf("invalid header value: %s", h)
 		}
-		hs = append(hs, [2]string{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
+		hs = append(hs, lib.KV{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
 	}
 
-	var ds [][2]string
+	var ds []lib.KV
 	for _, d := range data {
 		parts := strings.SplitN(d, "=", 2)
 		if parts == nil || len(parts) != 2 {
 			return lib.CurlParam{}, fmt.Errorf("invalid data value: %s", d)
 		}
-		ds = append(ds, [2]string{parts[0], parts[1]})
+		ds = append(ds, lib.KV{parts[0], parts[1]})
 	}
 
 	var fs []lib.Form
@@ -56,7 +56,7 @@ func buildCurlParam(
 					if headerParts == nil || len(headerParts) != 2 {
 						return lib.CurlParam{}, fmt.Errorf("invalid form value: %s", f)
 					}
-					form.Headers = append(form.Headers, [2]string{strings.TrimSuffix(headerParts[0], " "), strings.TrimPrefix(headerParts[1], " ")})
+					form.Headers = append(form.Headers, lib.KV{strings.TrimSuffix(headerParts[0], " "), strings.TrimPrefix(headerParts[1], " ")})
 				}
 			}
 		}

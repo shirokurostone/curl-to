@@ -31,14 +31,14 @@ func getRequestClassName(method string) (string, error) {
 type form struct {
 	Name   string
 	Value  string
-	Params [][2]string
+	Params []KV
 }
 
 type templateParams struct {
 	URL          string
 	RequestClass string
-	Headers      [][2]string
-	Data         [][2]string
+	Headers      []KV
+	Data         []KV
 	Form         []form
 }
 
@@ -46,14 +46,14 @@ func escapeSingleQuoteString(value string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(value, "\\", "\\\\"), "'", "\\'")
 }
 
-func toRubyHash(pairs [][2]string) string {
+func toRubyHash(pairs []KV) string {
 	sb := new(strings.Builder)
 	sb.WriteString("{")
 	for i, kv := range pairs {
 		sb.WriteString("'")
-		sb.WriteString(escapeSingleQuoteString(kv[0]))
+		sb.WriteString(escapeSingleQuoteString(kv.Key))
 		sb.WriteString("' => '")
-		sb.WriteString(escapeSingleQuoteString(kv[1]))
+		sb.WriteString(escapeSingleQuoteString(kv.Value))
 		sb.WriteString("'")
 		if i != len(pairs)-1 {
 			sb.WriteString(", ")
@@ -63,14 +63,14 @@ func toRubyHash(pairs [][2]string) string {
 	return sb.String()
 }
 
-func toRubySymbolHash(pairs [][2]string) string {
+func toRubySymbolHash(pairs []KV) string {
 	sb := new(strings.Builder)
 	sb.WriteString("{")
 	for i, kv := range pairs {
 		sb.WriteString(":")
-		sb.WriteString(kv[0])
+		sb.WriteString(kv.Key)
 		sb.WriteString(" => '")
-		sb.WriteString(escapeSingleQuoteString(kv[1]))
+		sb.WriteString(escapeSingleQuoteString(kv.Value))
 		sb.WriteString("'")
 		if i != len(pairs)-1 {
 			sb.WriteString(", ")
@@ -89,7 +89,7 @@ require 'uri'
 url = URI.parse('{{ .URL | escapeSingleQuoteString }}')
 req = {{ .RequestClass }}.new(url.request_uri)
 
-{{ range .Headers }}req['{{ index . 0 | escapeSingleQuoteString }}'] = '{{ index . 1 | escapeSingleQuoteString }}'
+{{ range .Headers }}req['{{ .Key | escapeSingleQuoteString }}'] = '{{ .Value | escapeSingleQuoteString }}'
 {{ end }}
 {{ if ne .Data nil }}req.set_form_data({{ .Data | toRubyHash }}){{ end }}
 {{ if ne .Form nil }}req.set_form(
@@ -140,10 +140,10 @@ puts res.body
 			}
 
 			if f.TypeValue != "" {
-				fm.Params = append(fm.Params, [2]string{"content_type", f.TypeValue})
+				fm.Params = append(fm.Params, KV{"content_type", f.TypeValue})
 			}
 			if f.Filename != "" {
-				fm.Params = append(fm.Params, [2]string{"filename", f.Filename})
+				fm.Params = append(fm.Params, KV{"filename", f.Filename})
 			}
 			if f.Headers != nil {
 				return "", fmt.Errorf("unsupported parameter: headers=")

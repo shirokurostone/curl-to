@@ -1,17 +1,22 @@
 package lib
 
+type KV struct {
+	Key   string
+	Value string
+}
+
 type Form struct {
 	Name      string
 	Value     string
 	TypeValue string
 	Filename  string
-	Headers   [][2]string
+	Headers   []KV
 }
 
 type CurlParam struct {
 	URL     string
 	Method  string
-	Headers [][2]string
-	Data    [][2]string
+	Headers []KV
+	Data    []KV
 	Form    []Form
 }
