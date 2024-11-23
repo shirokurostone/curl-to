@@ -8,6 +8,72 @@ import (
 	"strings"
 )
 
+func buildCurlParam(
+	url string,
+	request string,
+	headers []string,
+	data []string,
+	form []string,
+) (lib.CurlParam, error) {
+	var hs [][2]string
+	for _, h := range headers {
+		parts := strings.SplitN(h, ":", 2)
+		if parts == nil || len(parts) != 2 {
+			return lib.CurlParam{}, fmt.Errorf("invalid header value: %s", h)
+		}
+		hs = append(hs, [2]string{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
+	}
+
+	var ds [][2]string
+	for _, d := range data {
+		parts := strings.SplitN(d, "=", 2)
+		if parts == nil || len(parts) != 2 {
+			return lib.CurlParam{}, fmt.Errorf("invalid data value: %s", d)
+		}
+		ds = append(ds, [2]string{parts[0], parts[1]})
+	}
+
+	var fs []lib.Form
+	for _, f := range form {
+		parts := strings.Split(f, ";")
+		form := lib.Form{}
+		for i, p := range parts {
+			kv := strings.SplitN(p, "=", 2)
+			if kv == nil || len(kv) != 2 {
+				return lib.CurlParam{}, fmt.Errorf("invalid form value: %s", f)
+			}
+			if i == 0 {
+				form.Name = kv[0]
+				form.Value = kv[1]
+			} else {
+				switch kv[0] {
+				case "type":
+					form.TypeValue = kv[1]
+				case "filename":
+					form.Filename = kv[1]
+				case "headers":
+					headerParts := strings.SplitN(kv[1], ":", 2)
+					if headerParts == nil || len(headerParts) != 2 {
+						return lib.CurlParam{}, fmt.Errorf("invalid form value: %s", f)
+					}
+					form.Headers = append(form.Headers, [2]string{strings.TrimSuffix(headerParts[0], " "), strings.TrimPrefix(headerParts[1], " ")})
+				}
+			}
+		}
+		fs = append(fs, form)
+	}
+
+	param := lib.CurlParam{
+		URL:     url,
+		Method:  request,
+		Headers: hs,
+		Data:    ds,
+		Form:    fs,
+	}
+
+	return param, nil
+}
+
 var rootCmd = &cobra.Command{
 	Use:  "curl-to",
 	Args: cobra.ExactArgs(2),
@@ -15,64 +81,12 @@ var rootCmd = &cobra.Command{
 		lang := args[0]
 		url := args[1]
 
-		var hs [][2]string
-		for _, h := range headers {
-			parts := strings.SplitN(h, ":", 2)
-			if parts == nil || len(parts) != 2 {
-				return fmt.Errorf("invalid header value: %s", h)
-			}
-			hs = append(hs, [2]string{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
-		}
-
-		var ds [][2]string
-		for _, d := range data {
-			parts := strings.SplitN(d, "=", 2)
-			if parts == nil || len(parts) != 2 {
-				return fmt.Errorf("invalid data value: %s", d)
-			}
-			ds = append(ds, [2]string{parts[0], parts[1]})
-		}
-
-		var fs []lib.Form
-		for _, f := range form {
-			parts := strings.Split(f, ";")
-			form := lib.Form{}
-			for i, p := range parts {
-				kv := strings.SplitN(p, "=", 2)
-				if kv == nil || len(kv) != 2 {
-					return fmt.Errorf("invalid form value: %s", f)
-				}
-				if i == 0 {
-					form.Name = kv[0]
-					form.Value = kv[1]
-				} else {
-					switch kv[0] {
-					case "type":
-						form.TypeValue = kv[1]
-					case "filename":
-						form.Filename = kv[1]
-					case "headers":
-						headerParts := strings.SplitN(kv[1], ":", 2)
-						if headerParts == nil || len(headerParts) != 2 {
-							return fmt.Errorf("invalid form value: %s", f)
-						}
-						form.Headers = append(form.Headers, [2]string{strings.TrimSuffix(headerParts[0], " "), strings.TrimPrefix(headerParts[1], " ")})
-					}
-				}
-			}
-			fs = append(fs, form)
-		}
-
-		param := lib.CurlParam{
-			URL:     url,
-			Method:  request,
-			Headers: hs,
-			Data:    ds,
-			Form:    fs,
+		param, err := buildCurlParam(url, request, headers, data, form)
+		if err != nil {
+			return err
 		}
 
 		var code string
-		var err error
 		switch lang {
 		case "ruby":
 			code, err = lib.GenerateRubyCode(param)
