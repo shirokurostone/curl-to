@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/shirokurostone/curl-to/lib"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -9,10 +10,28 @@ import (
 var rootCmd = &cobra.Command{
 	Use:  "curl-to",
 	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		lang := args[0]
 		url := args[1]
-		fmt.Println(lang, url, request)
+		param := lib.CurlParam{
+			URL:    url,
+			Method: request,
+		}
+
+		var code string
+		var err error
+		switch lang {
+		case "ruby":
+			code, err = lib.GenerateRubyCode(param)
+		default:
+			err = fmt.Errorf("unsupported language: %s", lang)
+		}
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(code)
+		return nil
 	},
 }
 
