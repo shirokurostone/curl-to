@@ -40,6 +40,13 @@ type templateParams struct {
 	Headers      []KV
 	Data         []KV
 	Form         []form
+	AuthType     AuthType
+	User         string
+	Password     string
+}
+
+func (t templateParams) IsBasic() bool {
+	return t.AuthType == AuthBasic
 }
 
 func escapeSingleQuoteString(value string) string {
@@ -91,6 +98,7 @@ req = {{ .RequestClass }}.new(url.request_uri)
 
 {{ range .Headers }}req['{{ .Key | escapeSingleQuoteString }}'] = '{{ .Value | escapeSingleQuoteString }}'
 {{ end }}
+{{ if .IsBasic }}req.basic_auth('{{ .User | escapeSingleQuoteString }}', '{{ .Password | escapeSingleQuoteString }}'){{end}}
 {{ if ne .Data nil }}req.set_form_data({{ .Data | toRubyHash }}){{ end }}
 {{ if ne .Form nil }}req.set_form(
   [
@@ -130,6 +138,13 @@ puts res.body
 		Headers:      param.Headers,
 		Data:         param.Data,
 		Form:         nil,
+		AuthType:     param.AuthType,
+		User:         param.User,
+		Password:     param.Password,
+	}
+
+	if param.AuthType == AuthDigest {
+		return "", fmt.Errorf("unsupported auth type: digest")
 	}
 
 	if param.Form != nil {

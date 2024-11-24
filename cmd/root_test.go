@@ -16,6 +16,9 @@ func TestBuildCurlParam(t *testing.T) {
 		headers     []string
 		data        []string
 		form        []string
+		user        string
+		basic       bool
+		digest      bool
 		expected    lib.CurlParam
 		expectedErr error
 	}{
@@ -26,6 +29,9 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			nil,
+			"",
+			true,
+			false,
 			lib.CurlParam{
 				URL:     "http://localhost/",
 				Method:  "GET",
@@ -42,6 +48,9 @@ func TestBuildCurlParam(t *testing.T) {
 			[]string{"Content-Type: application/json"},
 			nil,
 			nil,
+			"",
+			true,
+			false,
 			lib.CurlParam{
 				URL:     "http://localhost/",
 				Method:  "GET",
@@ -58,6 +67,9 @@ func TestBuildCurlParam(t *testing.T) {
 			[]string{"invalid"},
 			nil,
 			nil,
+			"",
+			true,
+			false,
 			lib.CurlParam{},
 			fmt.Errorf("invalid header value: invalid"),
 		},
@@ -68,6 +80,9 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			[]string{"key=value"},
 			nil,
+			"",
+			true,
+			false,
 			lib.CurlParam{
 				URL:     "http://localhost/",
 				Method:  "GET",
@@ -84,6 +99,9 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			[]string{"invalid"},
 			nil,
+			"",
+			true,
+			false,
 			lib.CurlParam{},
 			fmt.Errorf("invalid data value: invalid"),
 		},
@@ -94,6 +112,9 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			[]string{"key=value;type=application/json;filename=sample.json;headers=X-Header: Value"},
+			"",
+			true,
+			false,
 			lib.CurlParam{
 				URL:     "http://localhost/",
 				Method:  "GET",
@@ -116,6 +137,9 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			[]string{"invalid"},
+			"",
+			true,
+			false,
 			lib.CurlParam{},
 			fmt.Errorf("invalid form value: invalid"),
 		},
@@ -126,14 +150,87 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			[]string{"key=value;headers=invalid"},
+			"",
+			true,
+			false,
 			lib.CurlParam{},
 			fmt.Errorf("invalid form value: key=value;headers=invalid"),
+		},
+		{
+			"user: valid: basic",
+			"http://localhost/",
+			"GET",
+			nil,
+			nil,
+			nil,
+			"user:password",
+			false,
+			false,
+			lib.CurlParam{
+				URL:      "http://localhost/",
+				Method:   "GET",
+				Headers:  nil,
+				Data:     nil,
+				Form:     nil,
+				AuthType: lib.AuthBasic,
+				User:     "user",
+				Password: "password",
+			},
+			nil,
+		},
+		{
+			"user: valid: digest",
+			"http://localhost/",
+			"GET",
+			nil,
+			nil,
+			nil,
+			"user:password",
+			false,
+			true,
+			lib.CurlParam{
+				URL:      "http://localhost/",
+				Method:   "GET",
+				Headers:  nil,
+				Data:     nil,
+				Form:     nil,
+				AuthType: lib.AuthDigest,
+				User:     "user",
+				Password: "password",
+			},
+			nil,
+		},
+		{
+			"user: invalid: user",
+			"http://localhost/",
+			"GET",
+			nil,
+			nil,
+			nil,
+			"user",
+			true,
+			false,
+			lib.CurlParam{},
+			fmt.Errorf("invalid user value: user"),
+		},
+		{
+			"user: invalid: no auth type",
+			"http://localhost/",
+			"GET",
+			nil,
+			nil,
+			nil,
+			"user:password",
+			true,
+			true,
+			lib.CurlParam{},
+			fmt.Errorf("no auth type"),
 		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.form)
+			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.form, tt.user, tt.basic, tt.digest)
 			assert.Equal(t, tt.expected, actual)
 			assert.Equal(t, tt.expectedErr, actualErr)
 		})

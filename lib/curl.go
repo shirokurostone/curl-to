@@ -13,10 +13,21 @@ type Form struct {
 	Headers   []KV
 }
 
+type AuthType int
+
+const (
+	AuthNone AuthType = iota
+	AuthBasic
+	AuthDigest
+)
+
 type CurlParam struct {
-	URL     string
-	Method  string
-	Headers []KV
-	Data    []KV
-	Form    []Form
+	URL      string
+	Method   string
+	Headers  []KV
+	Data     []KV
+	Form     []Form
+	AuthType AuthType
+	User     string
+	Password string
 }

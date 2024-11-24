@@ -14,6 +14,9 @@ func buildCurlParam(
 	headers []string,
 	data []string,
 	form []string,
+	user string,
+	basic bool,
+	digest bool,
 ) (lib.CurlParam, error) {
 	var hs []lib.KV
 	for _, h := range headers {
@@ -64,11 +67,30 @@ func buildCurlParam(
 	}
 
 	param := lib.CurlParam{
-		URL:     url,
-		Method:  request,
-		Headers: hs,
-		Data:    ds,
-		Form:    fs,
+		URL:      url,
+		Method:   request,
+		Headers:  hs,
+		Data:     ds,
+		Form:     fs,
+		AuthType: lib.AuthNone,
+	}
+
+	if user != "" {
+		parts := strings.SplitN(user, ":", 2)
+		if parts == nil || len(parts) != 2 {
+			return lib.CurlParam{}, fmt.Errorf("invalid user value: %s", user)
+		}
+		param.User = parts[0]
+		param.Password = parts[1]
+		if basic && !digest {
+			param.AuthType = lib.AuthBasic
+		} else if !basic && digest {
+			param.AuthType = lib.AuthDigest
+		} else if !basic && !digest {
+			param.AuthType = lib.AuthBasic
+		} else {
+			return lib.CurlParam{}, fmt.Errorf("no auth type")
+		}
 	}
 
 	return param, nil
@@ -81,7 +103,7 @@ var rootCmd = &cobra.Command{
 		lang := args[0]
 		url := args[1]
 
-		param, err := buildCurlParam(url, request, headers, data, form)
+		param, err := buildCurlParam(url, request, headers, data, form, user, basic, digest)
 		if err != nil {
 			return err
 		}
@@ -106,6 +128,9 @@ var request string
 var headers []string
 var data []string
 var form []string
+var user string
+var basic bool
+var digest bool
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&request, "request", "X", "GET", "")
@@ -113,6 +138,10 @@ func init() {
 	rootCmd.PersistentFlags().StringArrayVarP(&data, "data", "d", nil, "")
 	rootCmd.PersistentFlags().StringArrayVarP(&form, "form", "F", nil, "")
 	rootCmd.MarkFlagsMutuallyExclusive("data", "form")
+	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "", "")
+	rootCmd.PersistentFlags().BoolVar(&basic, "basic", false, "")
+	rootCmd.PersistentFlags().BoolVar(&digest, "digest", false, "")
+	rootCmd.MarkFlagsMutuallyExclusive("basic", "digest")
 }
 
 func Execute() {
