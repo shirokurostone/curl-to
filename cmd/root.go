@@ -13,6 +13,7 @@ func buildCurlParam(
 	request string,
 	headers []string,
 	data []string,
+	dataBinary []string,
 	form []string,
 	user string,
 	basic bool,
@@ -67,17 +68,23 @@ func buildCurlParam(
 		fs = append(fs, form)
 	}
 
+	var dbs string
+	if dataBinary != nil {
+		dbs = strings.Join(dataBinary, "&")
+	}
+
 	if userAgent != "" {
 		hs = append(hs, lib.KV{"User-Agent", userAgent})
 	}
 
 	param := lib.CurlParam{
-		URL:      url,
-		Method:   request,
-		Headers:  hs,
-		Data:     ds,
-		Form:     fs,
-		AuthType: lib.AuthNone,
+		URL:        url,
+		Method:     request,
+		Headers:    hs,
+		Data:       ds,
+		DataBinary: dbs,
+		Form:       fs,
+		AuthType:   lib.AuthNone,
 	}
 
 	if user != "" {
@@ -108,7 +115,7 @@ var rootCmd = &cobra.Command{
 		lang := args[0]
 		url := args[1]
 
-		param, err := buildCurlParam(url, request, headers, data, form, user, basic, digest, userAgent)
+		param, err := buildCurlParam(url, request, headers, data, dataBinary, form, user, basic, digest, userAgent)
 		if err != nil {
 			return err
 		}
@@ -132,6 +139,7 @@ var rootCmd = &cobra.Command{
 var request string
 var headers []string
 var data []string
+var dataBinary []string
 var form []string
 var user string
 var basic bool
@@ -142,8 +150,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&request, "request", "X", "GET", "")
 	rootCmd.PersistentFlags().StringArrayVarP(&headers, "header", "H", nil, "")
 	rootCmd.PersistentFlags().StringArrayVarP(&data, "data", "d", nil, "")
+	rootCmd.PersistentFlags().StringArrayVar(&dataBinary, "data-binary", nil, "")
 	rootCmd.PersistentFlags().StringArrayVarP(&form, "form", "F", nil, "")
-	rootCmd.MarkFlagsMutuallyExclusive("data", "form")
+	rootCmd.MarkFlagsMutuallyExclusive("data", "data-binary", "form")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "", "")
 	rootCmd.PersistentFlags().BoolVar(&basic, "basic", false, "")
 	rootCmd.PersistentFlags().BoolVar(&digest, "digest", false, "")

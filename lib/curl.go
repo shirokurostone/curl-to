@@ -22,12 +22,13 @@ const (
 )
 
 type CurlParam struct {
-	URL      string
-	Method   string
-	Headers  []KV
-	Data     []KV
-	Form     []Form
-	AuthType AuthType
-	User     string
-	Password string
+	URL        string
+	Method     string
+	Headers    []KV
+	Data       []KV
+	DataBinary string
+	Form       []Form
+	AuthType   AuthType
+	User       string
+	Password   string
 }

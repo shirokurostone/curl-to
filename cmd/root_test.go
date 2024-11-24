@@ -15,6 +15,7 @@ func TestBuildCurlParam(t *testing.T) {
 		request     string
 		headers     []string
 		data        []string
+		dataBinary  []string
 		form        []string
 		user        string
 		basic       bool
@@ -27,6 +28,7 @@ func TestBuildCurlParam(t *testing.T) {
 			"minimum",
 			"http://localhost/",
 			"GET",
+			nil,
 			nil,
 			nil,
 			nil,
@@ -50,6 +52,7 @@ func TestBuildCurlParam(t *testing.T) {
 			[]string{"Content-Type: application/json"},
 			nil,
 			nil,
+			nil,
 			"",
 			true,
 			false,
@@ -70,6 +73,7 @@ func TestBuildCurlParam(t *testing.T) {
 			[]string{"invalid"},
 			nil,
 			nil,
+			nil,
 			"",
 			true,
 			false,
@@ -83,6 +87,7 @@ func TestBuildCurlParam(t *testing.T) {
 			"GET",
 			nil,
 			[]string{"key=value"},
+			nil,
 			nil,
 			"",
 			true,
@@ -104,6 +109,7 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			[]string{"invalid"},
 			nil,
+			nil,
 			"",
 			true,
 			false,
@@ -112,9 +118,32 @@ func TestBuildCurlParam(t *testing.T) {
 			fmt.Errorf("invalid data value: invalid"),
 		},
 		{
+			"dataBinary: valid",
+			"http://localhost/",
+			"GET",
+			nil,
+			nil,
+			[]string{"value1", "value2"},
+			nil,
+			"",
+			true,
+			false,
+			"",
+			lib.CurlParam{
+				URL:        "http://localhost/",
+				Method:     "GET",
+				Headers:    nil,
+				Data:       nil,
+				DataBinary: "value1&value2",
+				Form:       nil,
+			},
+			nil,
+		},
+		{
 			"form: valid",
 			"http://localhost/",
 			"GET",
+			nil,
 			nil,
 			nil,
 			[]string{"key=value;type=application/json;filename=sample.json;headers=X-Header: Value"},
@@ -143,6 +172,7 @@ func TestBuildCurlParam(t *testing.T) {
 			"GET",
 			nil,
 			nil,
+			nil,
 			[]string{"invalid"},
 			"",
 			true,
@@ -157,6 +187,7 @@ func TestBuildCurlParam(t *testing.T) {
 			"GET",
 			nil,
 			nil,
+			nil,
 			[]string{"key=value;headers=invalid"},
 			"",
 			true,
@@ -169,6 +200,7 @@ func TestBuildCurlParam(t *testing.T) {
 			"user: valid: basic",
 			"http://localhost/",
 			"GET",
+			nil,
 			nil,
 			nil,
 			nil,
@@ -195,6 +227,7 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			nil,
+			nil,
 			"user:password",
 			false,
 			true,
@@ -218,6 +251,7 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			nil,
+			nil,
 			"user",
 			true,
 			false,
@@ -232,6 +266,7 @@ func TestBuildCurlParam(t *testing.T) {
 			nil,
 			nil,
 			nil,
+			nil,
 			"user:password",
 			true,
 			true,
@@ -243,6 +278,7 @@ func TestBuildCurlParam(t *testing.T) {
 			"userAgent: valid",
 			"http://localhost/",
 			"GET",
+			nil,
 			nil,
 			nil,
 			nil,
@@ -263,7 +299,7 @@ func TestBuildCurlParam(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.form, tt.user, tt.basic, tt.digest, tt.userAgent)
+			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.dataBinary, tt.form, tt.user, tt.basic, tt.digest, tt.userAgent)
 			assert.Equal(t, tt.expected, actual)
 			assert.Equal(t, tt.expectedErr, actualErr)
 		})

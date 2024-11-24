@@ -39,6 +39,7 @@ type templateParams struct {
 	RequestClass string
 	Headers      []KV
 	Data         []KV
+	DataBinary   string
 	Form         []form
 	AuthType     AuthType
 	User         string
@@ -100,6 +101,7 @@ req = {{ .RequestClass }}.new(url.request_uri)
 {{ end }}
 {{ if .IsBasic }}req.basic_auth('{{ .User | escapeSingleQuoteString }}', '{{ .Password | escapeSingleQuoteString }}'){{end}}
 {{ if ne .Data nil }}req.set_form_data({{ .Data | toRubyHash }}){{ end }}
+{{ if ne .DataBinary "" }}req.body = '{{ .DataBinary | escapeSingleQuoteString }}'{{ end }}
 {{ if ne .Form nil }}req.set_form(
   [
 {{ range .Form }}    ['{{ .Name | escapeSingleQuoteString }}', '{{ .Value | escapeSingleQuoteString }}'{{ if ne .Params nil }}, {{ .Params | toRubySymbolHash }}{{ end }}],
@@ -137,6 +139,7 @@ puts res.body
 		RequestClass: requestClass,
 		Headers:      param.Headers,
 		Data:         param.Data,
+		DataBinary:   param.DataBinary,
 		Form:         nil,
 		AuthType:     param.AuthType,
 		User:         param.User,
