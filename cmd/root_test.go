@@ -15,6 +15,7 @@ func TestBuildCurlParam(t *testing.T) {
 		request     string
 		headers     []string
 		data        []string
+		dataAscii   []string
 		dataBinary  []string
 		form        []string
 		user        string
@@ -68,6 +69,24 @@ func TestBuildCurlParam(t *testing.T) {
 			request:     "GET",
 			data:        []string{"invalid"},
 			expectedErr: fmt.Errorf("invalid data value: invalid"),
+		},
+		{
+			name:      "dataAscii: valid",
+			url:       "http://localhost/",
+			request:   "GET",
+			dataAscii: []string{"key=value"},
+			expected: lib.CurlParam{
+				URL:    "http://localhost/",
+				Method: "GET",
+				Data:   []lib.KV{{"key", "value"}},
+			},
+		},
+		{
+			name:        "dataAscii: invalid value",
+			url:         "http://localhost/",
+			request:     "GET",
+			dataAscii:   []string{"invalid"},
+			expectedErr: fmt.Errorf("invalid data-ascii value: invalid"),
 		},
 		{
 			name:       "dataBinary: valid",
@@ -172,7 +191,7 @@ func TestBuildCurlParam(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.dataBinary, tt.form, tt.user, tt.basic, tt.digest, tt.userAgent)
+			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.dataAscii, tt.dataBinary, tt.form, tt.user, tt.basic, tt.digest, tt.userAgent)
 			assert.Equal(t, tt.expected, actual)
 			assert.Equal(t, tt.expectedErr, actualErr)
 		})

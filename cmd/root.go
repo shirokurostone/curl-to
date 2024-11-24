@@ -13,6 +13,7 @@ func buildCurlParam(
 	request string,
 	headers []string,
 	data []string,
+	dataAscii []string,
 	dataBinary []string,
 	form []string,
 	user string,
@@ -30,12 +31,22 @@ func buildCurlParam(
 	}
 
 	var ds []lib.KV
-	for _, d := range data {
-		parts := strings.SplitN(d, "=", 2)
-		if parts == nil || len(parts) != 2 {
-			return lib.CurlParam{}, fmt.Errorf("invalid data value: %s", d)
+	if data != nil {
+		for _, d := range data {
+			parts := strings.SplitN(d, "=", 2)
+			if parts == nil || len(parts) != 2 {
+				return lib.CurlParam{}, fmt.Errorf("invalid data value: %s", d)
+			}
+			ds = append(ds, lib.KV{parts[0], parts[1]})
 		}
-		ds = append(ds, lib.KV{parts[0], parts[1]})
+	} else if dataAscii != nil {
+		for _, d := range dataAscii {
+			parts := strings.SplitN(d, "=", 2)
+			if parts == nil || len(parts) != 2 {
+				return lib.CurlParam{}, fmt.Errorf("invalid data-ascii value: %s", d)
+			}
+			ds = append(ds, lib.KV{parts[0], parts[1]})
+		}
 	}
 
 	var fs []lib.Form
@@ -115,7 +126,7 @@ var rootCmd = &cobra.Command{
 		lang := args[0]
 		url := args[1]
 
-		param, err := buildCurlParam(url, request, headers, data, dataBinary, form, user, basic, digest, userAgent)
+		param, err := buildCurlParam(url, request, headers, data, dataAscii, dataBinary, form, user, basic, digest, userAgent)
 		if err != nil {
 			return err
 		}
@@ -139,6 +150,7 @@ var rootCmd = &cobra.Command{
 var request string
 var headers []string
 var data []string
+var dataAscii []string
 var dataBinary []string
 var form []string
 var user string
@@ -150,9 +162,10 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&request, "request", "X", "GET", "")
 	rootCmd.PersistentFlags().StringArrayVarP(&headers, "header", "H", nil, "")
 	rootCmd.PersistentFlags().StringArrayVarP(&data, "data", "d", nil, "")
+	rootCmd.PersistentFlags().StringArrayVar(&dataAscii, "data-ascii", nil, "")
 	rootCmd.PersistentFlags().StringArrayVar(&dataBinary, "data-binary", nil, "")
 	rootCmd.PersistentFlags().StringArrayVarP(&form, "form", "F", nil, "")
-	rootCmd.MarkFlagsMutuallyExclusive("data", "data-binary", "form")
+	rootCmd.MarkFlagsMutuallyExclusive("data", "data-ascii", "data-binary", "form")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "", "")
 	rootCmd.PersistentFlags().BoolVar(&basic, "basic", false, "")
 	rootCmd.PersistentFlags().BoolVar(&digest, "digest", false, "")
