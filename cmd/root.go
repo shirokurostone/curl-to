@@ -15,6 +15,7 @@ func buildCurlParam(
 	data []string,
 	dataAscii []string,
 	dataBinary []string,
+	dataRaw []string,
 	form []string,
 	user string,
 	basic bool,
@@ -82,6 +83,8 @@ func buildCurlParam(
 	var dbs string
 	if dataBinary != nil {
 		dbs = strings.Join(dataBinary, "&")
+	} else if dataRaw != nil {
+		dbs = strings.Join(dataRaw, "&")
 	}
 
 	if userAgent != "" {
@@ -126,7 +129,7 @@ var rootCmd = &cobra.Command{
 		lang := args[0]
 		url := args[1]
 
-		param, err := buildCurlParam(url, request, headers, data, dataAscii, dataBinary, form, user, basic, digest, userAgent)
+		param, err := buildCurlParam(url, request, headers, data, dataAscii, dataBinary, dataRaw, form, user, basic, digest, userAgent)
 		if err != nil {
 			return err
 		}
@@ -152,6 +155,7 @@ var headers []string
 var data []string
 var dataAscii []string
 var dataBinary []string
+var dataRaw []string
 var form []string
 var user string
 var basic bool
@@ -164,8 +168,9 @@ func init() {
 	rootCmd.PersistentFlags().StringArrayVarP(&data, "data", "d", nil, "")
 	rootCmd.PersistentFlags().StringArrayVar(&dataAscii, "data-ascii", nil, "")
 	rootCmd.PersistentFlags().StringArrayVar(&dataBinary, "data-binary", nil, "")
+	rootCmd.PersistentFlags().StringArrayVar(&dataRaw, "data-raw", nil, "")
 	rootCmd.PersistentFlags().StringArrayVarP(&form, "form", "F", nil, "")
-	rootCmd.MarkFlagsMutuallyExclusive("data", "data-ascii", "data-binary", "form")
+	rootCmd.MarkFlagsMutuallyExclusive("data", "data-ascii", "data-binary", "data-raw", "form")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "", "")
 	rootCmd.PersistentFlags().BoolVar(&basic, "basic", false, "")
 	rootCmd.PersistentFlags().BoolVar(&digest, "digest", false, "")

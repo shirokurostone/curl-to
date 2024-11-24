@@ -17,6 +17,7 @@ func TestBuildCurlParam(t *testing.T) {
 		data        []string
 		dataAscii   []string
 		dataBinary  []string
+		dataRaw     []string
 		form        []string
 		user        string
 		basic       bool
@@ -93,6 +94,17 @@ func TestBuildCurlParam(t *testing.T) {
 			url:        "http://localhost/",
 			request:    "GET",
 			dataBinary: []string{"value1", "value2"},
+			expected: lib.CurlParam{
+				URL:        "http://localhost/",
+				Method:     "GET",
+				DataBinary: "value1&value2",
+			},
+		},
+		{
+			name:    "dataBinary: valid",
+			url:     "http://localhost/",
+			request: "GET",
+			dataRaw: []string{"value1", "value2"},
 			expected: lib.CurlParam{
 				URL:        "http://localhost/",
 				Method:     "GET",
@@ -191,7 +203,7 @@ func TestBuildCurlParam(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.dataAscii, tt.dataBinary, tt.form, tt.user, tt.basic, tt.digest, tt.userAgent)
+			actual, actualErr := buildCurlParam(tt.url, tt.request, tt.headers, tt.data, tt.dataAscii, tt.dataBinary, tt.dataRaw, tt.form, tt.user, tt.basic, tt.digest, tt.userAgent)
 			assert.Equal(t, tt.expected, actual)
 			assert.Equal(t, tt.expectedErr, actualErr)
 		})
