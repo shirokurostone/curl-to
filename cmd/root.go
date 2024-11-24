@@ -17,6 +17,7 @@ func buildCurlParam(
 	user string,
 	basic bool,
 	digest bool,
+	userAgent string,
 ) (lib.CurlParam, error) {
 	var hs []lib.KV
 	for _, h := range headers {
@@ -66,6 +67,10 @@ func buildCurlParam(
 		fs = append(fs, form)
 	}
 
+	if userAgent != "" {
+		hs = append(hs, lib.KV{"User-Agent", userAgent})
+	}
+
 	param := lib.CurlParam{
 		URL:      url,
 		Method:   request,
@@ -103,7 +108,7 @@ var rootCmd = &cobra.Command{
 		lang := args[0]
 		url := args[1]
 
-		param, err := buildCurlParam(url, request, headers, data, form, user, basic, digest)
+		param, err := buildCurlParam(url, request, headers, data, form, user, basic, digest, userAgent)
 		if err != nil {
 			return err
 		}
@@ -131,6 +136,7 @@ var form []string
 var user string
 var basic bool
 var digest bool
+var userAgent string
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&request, "request", "X", "GET", "")
@@ -142,6 +148,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&basic, "basic", false, "")
 	rootCmd.PersistentFlags().BoolVar(&digest, "digest", false, "")
 	rootCmd.MarkFlagsMutuallyExclusive("basic", "digest")
+	rootCmd.PersistentFlags().StringVarP(&userAgent, "user-agent", "A", "", "")
 }
 
 func Execute() {
