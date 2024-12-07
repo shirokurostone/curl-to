@@ -38,8 +38,7 @@ type templateParams struct {
 	URL          string
 	RequestClass string
 	Headers      []KV
-	Data         []KV
-	DataBinary   string
+	Data         []Data
 	Form         []form
 	AuthType     AuthType
 	User         string
@@ -52,6 +51,20 @@ func (t templateParams) IsBasic() bool {
 
 func escapeSingleQuoteString(value string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(value, "\\", "\\\\"), "'", "\\'")
+}
+
+func escapeBinaryString(value []byte) string {
+	var sb strings.Builder
+
+	for _, v := range value {
+		if v != byte('\\') && v != byte('#') && 0x20 <= v && v <= 0x7e {
+			sb.WriteByte(v)
+		} else {
+			sb.WriteString(fmt.Sprintf("\\x%02x", v))
+		}
+	}
+
+	return sb.String()
 }
 
 func toRubyHash(pairs []KV) string {
@@ -100,8 +113,24 @@ req = {{ .RequestClass }}.new(url.request_uri)
 {{ range .Headers }}req['{{ .Key | escapeSingleQuoteString }}'] = '{{ .Value | escapeSingleQuoteString }}'
 {{ end }}
 {{ if .IsBasic }}req.basic_auth('{{ .User | escapeSingleQuoteString }}', '{{ .Password | escapeSingleQuoteString }}'){{end}}
-{{ if ne .Data nil }}req.set_form_data({{ .Data | toRubyHash }}){{ end }}
-{{ if ne .DataBinary "" }}req.body = '{{ .DataBinary | escapeSingleQuoteString }}'{{ end }}
+{{ if ne .Data nil }}
+data = [
+{{ range.Data }}
+  {{- if eq .Type 0 -}}
+    '{{ .String | escapeSingleQuoteString }}',
+  {{- else if eq .Type 1 -}}
+    File.read('{{ .FileName | escapeSingleQuoteString }}')
+  {{- else if eq .Type 2 -}}
+    "{{ .Binary | escapeBinaryString }}",
+  {{- else if eq .Type 3 -}}
+    File.read('{{ .FileName | escapeSingleQuoteString }}')
+  {{- else if eq .Type 4 -}}
+    $stdin.read(),
+  {{- end -}}
+{{ end }}
+]
+req.body = data.join('&')
+{{ end }}
 {{ if ne .Form nil }}req.set_form(
   [
 {{ range .Form }}    ['{{ .Name | escapeSingleQuoteString }}', '{{ .Value | escapeSingleQuoteString }}'{{ if ne .Params nil }}, {{ .Params | toRubySymbolHash }}{{ end }}],
@@ -123,6 +152,7 @@ puts res.body
 		template.New("ruby").
 			Funcs(template.FuncMap{
 				"escapeSingleQuoteString": escapeSingleQuoteString,
+				"escapeBinaryString":      escapeBinaryString,
 				"toRubyHash":              toRubyHash,
 				"toRubySymbolHash":        toRubySymbolHash,
 			}).
@@ -139,7 +169,6 @@ puts res.body
 		RequestClass: requestClass,
 		Headers:      param.Headers,
 		Data:         param.Data,
-		DataBinary:   param.DataBinary,
 		Form:         nil,
 		AuthType:     param.AuthType,
 		User:         param.User,

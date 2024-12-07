@@ -31,22 +31,40 @@ func buildCurlParam(
 		hs = append(hs, lib.KV{strings.TrimSuffix(parts[0], " "), strings.TrimPrefix(parts[1], " ")})
 	}
 
-	var ds []lib.KV
+	var ds []lib.Data
 	if data != nil {
 		for _, d := range data {
-			parts := strings.SplitN(d, "=", 2)
-			if parts == nil || len(parts) != 2 {
-				return lib.CurlParam{}, fmt.Errorf("invalid data value: %s", d)
+			if d == "@-" {
+				ds = append(ds, lib.Data{Type: lib.DataTypeStdin})
+			} else if strings.HasPrefix(d, "@") {
+				ds = append(ds, lib.Data{Type: lib.DataTypeFileString, FileName: strings.TrimPrefix(d, "@")})
+			} else {
+				ds = append(ds, lib.Data{Type: lib.DataTypeString, String: d})
 			}
-			ds = append(ds, lib.KV{parts[0], parts[1]})
 		}
 	} else if dataAscii != nil {
 		for _, d := range dataAscii {
-			parts := strings.SplitN(d, "=", 2)
-			if parts == nil || len(parts) != 2 {
-				return lib.CurlParam{}, fmt.Errorf("invalid data-ascii value: %s", d)
+			if d == "@-" {
+				ds = append(ds, lib.Data{Type: lib.DataTypeStdin})
+			} else if strings.HasPrefix(d, "@") {
+				ds = append(ds, lib.Data{Type: lib.DataTypeFileString, FileName: strings.TrimPrefix(d, "@")})
+			} else {
+				ds = append(ds, lib.Data{Type: lib.DataTypeString, String: d})
 			}
-			ds = append(ds, lib.KV{parts[0], parts[1]})
+		}
+	} else if dataBinary != nil {
+		for _, d := range dataBinary {
+			if d == "@-" {
+				ds = append(ds, lib.Data{Type: lib.DataTypeStdin})
+			} else if strings.HasPrefix(d, "@") {
+				ds = append(ds, lib.Data{Type: lib.DataTypeFileBinary, FileName: strings.TrimPrefix(d, "@")})
+			} else {
+				ds = append(ds, lib.Data{Type: lib.DataTypeBinary, Binary: []byte(d)})
+			}
+		}
+	} else if dataRaw != nil {
+		for _, d := range dataRaw {
+			ds = append(ds, lib.Data{Type: lib.DataTypeBinary, Binary: []byte(d)})
 		}
 	}
 
@@ -80,25 +98,17 @@ func buildCurlParam(
 		fs = append(fs, form)
 	}
 
-	var dbs string
-	if dataBinary != nil {
-		dbs = strings.Join(dataBinary, "&")
-	} else if dataRaw != nil {
-		dbs = strings.Join(dataRaw, "&")
-	}
-
 	if userAgent != "" {
 		hs = append(hs, lib.KV{"User-Agent", userAgent})
 	}
 
 	param := lib.CurlParam{
-		URL:        url,
-		Method:     request,
-		Headers:    hs,
-		Data:       ds,
-		DataBinary: dbs,
-		Form:       fs,
-		AuthType:   lib.AuthNone,
+		URL:      url,
+		Method:   request,
+		Headers:  hs,
+		Data:     ds,
+		Form:     fs,
+		AuthType: lib.AuthNone,
 	}
 
 	if user != "" {

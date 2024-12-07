@@ -61,15 +61,8 @@ func TestBuildCurlParam(t *testing.T) {
 			expected: lib.CurlParam{
 				URL:    "http://localhost/",
 				Method: "GET",
-				Data:   []lib.KV{{"key", "value"}},
+				Data:   []lib.Data{{Type: lib.DataTypeString, String: "key=value"}},
 			},
-		},
-		{
-			name:        "data: invalid value",
-			url:         "http://localhost/",
-			request:     "GET",
-			data:        []string{"invalid"},
-			expectedErr: fmt.Errorf("invalid data value: invalid"),
 		},
 		{
 			name:      "dataAscii: valid",
@@ -79,15 +72,8 @@ func TestBuildCurlParam(t *testing.T) {
 			expected: lib.CurlParam{
 				URL:    "http://localhost/",
 				Method: "GET",
-				Data:   []lib.KV{{"key", "value"}},
+				Data:   []lib.Data{{Type: lib.DataTypeString, String: "key=value"}},
 			},
-		},
-		{
-			name:        "dataAscii: invalid value",
-			url:         "http://localhost/",
-			request:     "GET",
-			dataAscii:   []string{"invalid"},
-			expectedErr: fmt.Errorf("invalid data-ascii value: invalid"),
 		},
 		{
 			name:       "dataBinary: valid",
@@ -95,20 +81,9 @@ func TestBuildCurlParam(t *testing.T) {
 			request:    "GET",
 			dataBinary: []string{"value1", "value2"},
 			expected: lib.CurlParam{
-				URL:        "http://localhost/",
-				Method:     "GET",
-				DataBinary: "value1&value2",
-			},
-		},
-		{
-			name:    "dataBinary: valid",
-			url:     "http://localhost/",
-			request: "GET",
-			dataRaw: []string{"value1", "value2"},
-			expected: lib.CurlParam{
-				URL:        "http://localhost/",
-				Method:     "GET",
-				DataBinary: "value1&value2",
+				URL:    "http://localhost/",
+				Method: "GET",
+				Data:   []lib.Data{{Type: lib.DataTypeBinary, Binary: []byte("value1")}, {Type: lib.DataTypeBinary, Binary: []byte("value2")}},
 			},
 		},
 		{
